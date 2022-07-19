@@ -8,6 +8,7 @@ import {
 
 export default function useAlmuerzos() {
   const [budgets, setBudgets] = useState([]);
+  const [latestBudgets, setLatestBudgets] = useState([]);
 
   useEffect(() => {
     initBudgets();
@@ -16,17 +17,14 @@ export default function useAlmuerzos() {
   const addOneRandomBudget = async () => {
     const budgetUpdated = {
       id: "6016721857",
-      name: "Personal",
+      name: "Personal#4c6ef5",
       budgetPerMonth: [
         {
-          // month
+          y: 2022,
           m: 7,
-          // bills
           b: [
             {
-              //description
               d: "taxi",
-              //amount
               a: 8,
             },
             {
@@ -40,8 +38,48 @@ export default function useAlmuerzos() {
     await updateBudget(budgetUpdated);
   };
 
+  const getBudgetsPerMonthFromString = (budgetsString) => {
+    const budgetsParsed = JSON.parse(budgetsString);
+    if (budgetsParsed.length === 0) return [];
+    return budgetsParsed.map((bud) => ({
+      year: bud.y,
+      month: bud.m,
+      bills: bud.b.map((bill) => ({
+        description: bill.d,
+        amount: bill.a,
+      })),
+    }));
+  };
+
+  const fromTodoistToBudgetsObject = (todoistObject) => {
+    if (todoistObject.length === 0) return [];
+    return todoistObject.map((t) => ({
+      id: t.id,
+      name: t.content.split("#")[0],
+      color: `#${t.content.split("#")[1]}`,
+      budgetPerMonth: getBudgetsPerMonthFromString(t.description),
+    }));
+  };
+  const fromBudgetsToTodoistObject = (budgets) => {};
+  const getLatestBudgets = (budgets) => {
+    budgets.forEach((b) => {
+      if (b.budgetPerMonth.length === 0) return;
+      const budgetPerMonthSortedByMonth = b.budgetPerMonth.sort(
+        (first, second) => second.month - first.month
+      );
+      const budgetPerMonthSortedByYear = budgetPerMonthSortedByMonth.sort(
+        (first, second) => second.year - first.year
+      );
+      b.budgetPerMonth = budgetPerMonthSortedByYear;
+    });
+    return budgets;
+  };
+
   const initBudgets = async () => {
-    await getAllBudgets();
+    const todoistResponse = await getAllBudgets();
+    const budgets = fromTodoistToBudgetsObject(todoistResponse);
+    setBudgets(budgets);
+    setLatestBudgets(getLatestBudgets(budgets));
   };
 
   const getAllBudgets = async () => {
@@ -52,17 +90,11 @@ export default function useAlmuerzos() {
         headers: new Headers({ Authorization: `Bearer ${todoistBearerToken}` }),
       });
       const tasksWithBudgets = await response.json();
-      if (tasksWithBudgets.length > 0) {
-        const budgetsWithFormat = tasksWithBudgets.map((t) => ({
-          id: t.id,
-          name: t.content,
-          budgetPerMonth: JSON.parse(t.description),
-        }));
-        setBudgets(budgetsWithFormat);
-      }
+      return tasksWithBudgets;
     } catch (e) {
       console.error(e || "Unknown erro");
     }
+    return "[]";
   };
   const updateBudget = async (budgetUpdated) => {
     const uuidGen = generateUUID();
@@ -89,5 +121,6 @@ export default function useAlmuerzos() {
     budgets,
     updateBudget,
     getAllBudgets,
+    latestBudgets,
   };
 }
