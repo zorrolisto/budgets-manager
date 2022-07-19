@@ -6,8 +6,8 @@ A budget manager which can manage your bills.
 
 Set this to env variables
 
-- TODOIST_TOKEN=<your todoist token>
-- TODOIST_BUDGET_ID_LIST=<tasks ids join by comma, one by budget>
+- TODOIST_TOKEN = \<secret your todoist token\>
+- TODOIST_BUDGET_ID_LIST = \<tasks ids join by comma, one by budget\>
 
 ## Stack
 
